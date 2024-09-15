@@ -1,6 +1,8 @@
 """
 URL configuration for ecommerce project.
 """
+from xml.etree.ElementInclude import include
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -22,6 +24,11 @@ openapi_info = openapi.Info(
 api = [
     path('o/', include(oauth2_urls)),
     path('api/', include('users.urls')),
+    path('api/', include('products.urls')),
+    path('api/', include('customers.urls')),
+    path('api/', include('orders.urls')),
+    path('api/', include('notifications.urls')),
+    path('api/', include('inventory.urls')),
 ]
 
 

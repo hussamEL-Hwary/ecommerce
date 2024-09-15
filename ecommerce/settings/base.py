@@ -12,9 +12,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 
 import environ
+from celery.schedules import crontab
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 
 env = environ.Env(
     # set casting, default value
@@ -42,12 +43,10 @@ DATABASES = {
     }
 }
 
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -67,17 +66,24 @@ THIRD_PARTY_APPS = [
     'rest_framework_swagger',
     'oauth2_provider',
     'drf_yasg',
+    'django_celery_beat',
+    'django_celery_results',
+    'corsheaders',
 ]
 
 LOCAL_APPS = [
     'users.apps.UsersConfig',
     'products.apps.ProductsConfig',
+    'customers.apps.CustomersConfig',
+    'orders.apps.OrdersConfig',
+    'notifications.apps.NotificationsConfig',
+    'inventory.apps.InventoryConfig',
 ]
 
-INSTALLED_APPS = DJANGO_APPS+THIRD_PARTY_APPS+LOCAL_APPS
-
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -108,7 +114,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ecommerce.wsgi.application'
 
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -126,7 +131,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 OAUTH2_PROVIDER = {
     # this is the list of available scopes
@@ -153,7 +157,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -176,4 +179,21 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,
     "DEFAULT_INFO": "azka_vision.urls.openapi_info"
+}
+
+# Celery SETTINGS
+CELERY_BROKER_URL = env.cache_url("CELERY_BROKER_URL", default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", default='django-db')
+CELERY_CACHE_BACKEND = env.str("CELERY_CACHE_BACKEND", default='django-cache')
+
+# for security reasons, mention the list of accepted content-types (in this case json)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+CELERY_BEAT_SCHEDULE = {
+    'check_low_stock': {
+        'task': 'orders.tasks.notify_low_stock',
+        'schedule': crontab(minute='*', hour='*', day_of_week='*'),
+    },
 }
