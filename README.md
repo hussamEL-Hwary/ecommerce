@@ -16,9 +16,8 @@ inventory management, and notifications for low stock levels using Celery.
 - [API Documentation](#api-documentation)
 - [Authentication](#authentication)
 - [Scheduled Tasks](#scheduled-tasks)
-- [Testing](#testing)
 - [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
+
 
 ## Objective
 
