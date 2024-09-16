@@ -1,0 +1,89 @@
+version: '3.7'
+
+
+networks:
+  services-net:
+    name: services-net
+    external: false
+
+volumes:
+  postgres_data:
+  media:
+
+services:
+  web-http:
+    image: web
+    container_name: web-http
+    restart: always
+    environment:
+      - DEBUG=False
+      - DJANGO_SETTINGS_MODULE=ecommerce.settings.prod
+      - DATABASE_URL=postgres://azka_vision:azka_vision@postgres:5432/azka_vision
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - SESSION_COOKIE_SECURE=False
+      - CSRF_COOKIE_SECURE=False
+      - CORS_ORIGIN_ALLOW_ALL=True
+      - DB_NAME=ecommerce
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    expose:
+      - 8000
+    volumes:
+      - media:/app/media
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - services-net
+    depends_on:
+      - postgres
+
+  celery:
+    image: web
+    container_name: celery
+    command: celery -A ecommerce worker -B --scheduler django -l info
+    restart: always
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CLIENT_NAME=Staging
+      - DATABASE_URL=postgres://ecommerce:ecommerce@postgres:5432/ecommerce
+      - CELERY_RESULT_BACKEND=django-db
+      - CELERY_CACHE_BACKEND=django-cache
+      - DB_NAME=ecommerce
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    volumes:
+      - media:/app/media
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - services-net
+    depends_on:
+      - redis
+      - postgres
+
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: redis
+    restart: always
+    expose:
+      - 6379
+    networks:
+      - services-net
+
+  postgres:
+    image: postgres:10
+    container_name: postgres
+    command: postgres -c 'max_connections=1000'
+    restart: always
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_PASSWORD: ecommerce
+      POSTGRES_USER: ecommerce
+    expose:
+      - 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - services-net
+    deploy:
+      resources:
+        limits:
+          memory: 3G
