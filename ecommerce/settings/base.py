@@ -35,11 +35,11 @@ VIEW_SITE_URL = env.str("VIEW_SITE_URL", default='http://localhost:8000')
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "ecommerce",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+        "NAME": env("DB_NAME", default="ecommerce"),
+        "USER": env("DB_USER", default="postgres"),
+        "PASSWORD": env("DB_PASSWORD", default="postgres"),
+        "HOST": env("DB_HOST", default="127.0.0.1"),
+        "PORT": env("DB_PORT", default="5432"),
     }
 }
 
@@ -194,6 +194,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {
     'check_low_stock': {
         'task': 'orders.tasks.notify_low_stock',
-        'schedule': crontab(minute='*', hour='*', day_of_week='*'),
+        'schedule': crontab(minute='0', hour='10', day_of_week='*'),
     },
 }
